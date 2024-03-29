@@ -113,13 +113,29 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     
     burstSamples = (burstWidth * (float)sampleRate);
     
-    //scaleDelayTimes(0.4);
+    //scaleDelayTimes(0.5); // remove
     
     for(size_t i = 0; i < numDelays; ++i)
     {
         delays[i]->prepare(spec.sampleRate, maxReverbSeconds);
         delays[i]->setReadPosition(delayTimes[i]); // should come from GUI
     }
+    
+    for (auto& lp : delayFilters)
+        lp.prepare (spec);
+    
+    for(auto& ap : allpass_combs)
+        ap.prepare(spec);
+    
+    for(Filter& lp : delayFilters)
+    {
+        *lp.coefficients = Coefficients::makeLowPass(sampleRate, delayFilterCutoff);
+    }
+    
+//    for(Filter& ap)
+//    {
+//        *ap.coefficients = Coefficients::makeAllPass(sampleRate, <#float frequency#>)
+//    }
 }
 
 void FDNAudioProcessor::releaseResources()
@@ -196,8 +212,12 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         // tap in
         for(size_t i = 0; i < numDelays; ++i)
         {
+            //delayFilters[i].snapToZero(); // see juce_IRRFilter header
+            float delayedFiltered = delayFilters[i].processSample(feedbackOut[i]) * (1 / std::sqrt(numDelays)); // for stability
             // add feedback and input signal to delay line
-            delays[i]->tapIn((feedbackOut[i] + signal) / (numDelays + 1)); // avoid instability
+            
+            float splitInput = signal / numDelays;
+            delays[i]->tapIn(delayedFiltered + splitInput); // avoid instability
             
             // move delays forward one sample
             delays[i]->advance();
@@ -207,7 +227,7 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         for (int channel = 0; channel < totalNumInputChannels; ++channel)
         {
             auto* channelData = buffer.getWritePointer(channel);
-            channelData[sample] = out + (signal * 0.2);
+            channelData[sample] = out;
         }
     }
 

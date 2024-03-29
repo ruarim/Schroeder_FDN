@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "DelayLine.h"
 #include "FeedbackMatrix.h"
+#include "ParallelProcessor.h"
 
 //==============================================================================
 /**
@@ -59,17 +60,25 @@ private:
     juce::AudioParameterBool* burstParam;
     
     float burstGain = 0.0f;
-    float burstWidth = 0.02;
+    float burstWidth = 0.10;
     size_t burstSamples = 0;
     
-    static const size_t numDelays = 8;
+    static const size_t numDelays = 4; // 4 left 4 right
     float maxReverbSeconds = 2.0;
-    float delayTimes[numDelays] = { 0.29f, 0.37f, 0.41f, 0.43f, 0.47f, 0.53f, 0.59f, 0.61f };
-    float feedbackDampening = 0.125f; // add array of gains for more colouration
+    float delayTimes[numDelays] = { 0.153129f, 0.210389f, 0.127837f, 0.256891f};
+    float feedbackDampening = 0.125f; // add array of dampening for more colouration
     //float outGains[numDelays] = { 0.2, 0.4, 0.5, 0.3};
     
     std::vector<DelayLine*> delays; // use juce::dsp intead
     FeedbackMatrix fbMatrix;
+    
+    using Filter       = juce::dsp::IIR::Filter<float>;
+    using Coefficients = juce::dsp::IIR::ArrayCoefficients<float>;
+    
+    int delayFilterCutoff = 8000;
+    
+    std::array<Filter, numDelays> delayFilters;
+    std::array<Filter, numDelays> allpass_combs;
     
     float testImpulse()
     {

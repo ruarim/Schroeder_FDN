@@ -11,7 +11,7 @@
 #pragma once
 
 template <class ProcessorType, size_t numProcessors>
-class ParallelProcessors
+class ParallelProcessor
 {
 public:
     void prepare (const juce::dsp::ProcessSpec& spec)
