@@ -28,7 +28,7 @@ FDNAudioProcessor::FDNAudioProcessor()
     // allocate delays
     for(size_t i = 0; i < numDelays; ++i)
     {
-        delays.push_back(new DelayLine);
+        delays[i] = new DelayLine();
     }
 }
 
@@ -110,32 +110,28 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     spec.maximumBlockSize = samplesPerBlock;
     spec.sampleRate = sampleRate;
     spec.numChannels = getTotalNumOutputChannels();
-    
     burstSamples = (burstWidth * (float)sampleRate);
-    
-    //scaleDelayTimes(0.5); // remove
     
     for(size_t i = 0; i < numDelays; ++i)
     {
-        delays[i]->prepare(spec.sampleRate, maxReverbSeconds);
+        /// set up delays
+        delays[i]->prepare(sampleRate, maxReverbSeconds);
         delays[i]->setReadPosition(delayTimes[i]); // should come from GUI
+        
+        /// pre feedback matric allpass filters
+        allpassCombs[i].prepare(sampleRate, maxReverbSeconds); // may have to instantiate all pass
+        allpassCombs[i].setDelay(allpassDelays[i]);
+        
+        /// delay lowpass filters
+        delayFilters[i] .prepare(spec);
+        *delayFilters[i].coefficients = Coefficients::makeLowPass(sampleRate, delayFilterCutoff);
     }
     
-    for (auto& lp : delayFilters)
-        lp.prepare (spec);
+    masterLowpass.prepare(spec);
+    masterLowshelf.prepare(spec);
     
-    for(auto& ap : allpass_combs)
-        ap.prepare(spec);
-    
-    for(Filter& lp : delayFilters)
-    {
-        *lp.coefficients = Coefficients::makeLowPass(sampleRate, delayFilterCutoff);
-    }
-    
-//    for(Filter& ap)
-//    {
-//        *ap.coefficients = Coefficients::makeAllPass(sampleRate, <#float frequency#>)
-//    }
+    *masterLowshelf.coefficients = Coefficients::makeLowShelf(sampleRate, lowshelfFreq, lowshelfQ, lowshelfGain);
+    *masterLowpass.coefficients = Coefficients::makeLowPass(sampleRate, lowpassFreq);
 }
 
 void FDNAudioProcessor::releaseResources()
@@ -183,52 +179,64 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     bool burst = burstParam->get();
     if (burst)
     {
-            burstParam->setValueNotifyingHost(0);
-            burstGain = 1.0f;
+        burstParam->setValueNotifyingHost(0);
+        burstGain = 1.0f;
     }
     
+    /// output
+
     for (size_t sample = 0; sample < numSamples; ++sample)
     {
-        float signal = testImpulse();
-        float out = 0.0f;
-        
-        // some portion of the signal sent directly out - add dry wet
-        //signal *= 0.2; // dry/wet
-        
-        std::vector<float> feedbackIn  (numDelays);
-        std::vector<float> feedbackOut (numDelays);
-        
-        // tap out
-        for(size_t i = 0; i < numDelays; ++i)
-        {
-            float delayOut = delays[i]->tapOut();
-            out += delayOut / numDelays; // summed output
-            feedbackIn[i] = delayOut;
-        }
-        
-        // apply feedback matrix
-        feedbackOut = fbMatrix.process(feedbackIn, numDelays);
-        
-        // tap in
-        for(size_t i = 0; i < numDelays; ++i)
-        {
-            //delayFilters[i].snapToZero(); // see juce_IRRFilter header
-            float delayedFiltered = delayFilters[i].processSample(feedbackOut[i]) * (1 / std::sqrt(numDelays)); // for stability
-            // add feedback and input signal to delay line
+            float signal = buffer.getReadPointer(0)[sample]; // CHANGE
+            float out = 0.0f;
             
-            float splitInput = signal / numDelays;
-            delays[i]->tapIn(delayedFiltered + splitInput); // avoid instability
+            // some portion of the signal sent directly out - add dry wet
+            //signal *= 0.2; // dry/wet add source receiver delay
             
-            // move delays forward one sample
-            delays[i]->advance();
-        }
+            std::vector<float> feedbackIn  (numDelays);
+            std::vector<float> feedbackOut (numDelays);
+            
+            /// tap out
+            for(size_t i = 0; i < numDelays; ++i)
+            {
+                float delayed = delays[i]->tapOut();
+                out += delayed; /// summed output
+                feedbackIn[i] = delayed;
+            }
+            
+            /// apply Schroeder all-pass filters
+            for(size_t i = 0; i < numDelays; ++i)
+            {
+                feedbackIn[i] = allpassCombs[i].processSample(feedbackIn[i]);
+            }
+            
+            /// apply feedback matrix
+            feedbackOut = fbMatrix.process(feedbackIn, numDelays, feedbackDampening);
+            
+            /// tap in
+            for(size_t i = 0; i < numDelays; ++i)
+            {
+                float filterScaling =  (1 / std::sqrt(numDelays)); /// for stability
+                //delayFilters[i].snapToZero(); /// see juce_IIRFilter header
+                float delayedFiltered = delayFilters[i].processSample(feedbackOut[i]) * filterScaling;
+                
+                // add feedback and input signal to delay line
+                float splitInput = signal / numDelays;
+                delays[i]->tapIn(delayedFiltered + splitInput); // avoid instability
+                
+                // move delays forward one sample
+                delays[i]->advance();
+            }
+            
+            /// master filtering
+            out = masterLowshelf.processSample(out);
+            out = masterLowpass.processSample(out);
         
-        /// output
-        for (int channel = 0; channel < totalNumInputChannels; ++channel)
-        {
+            for (int channel = 0; channel < totalNumInputChannels; ++channel)
+            {
             auto* channelData = buffer.getWritePointer(channel);
-            channelData[sample] = out;
-        }
+            channelData[sample] = out; // replace with call to FDN class.
+            }
     }
 
 }

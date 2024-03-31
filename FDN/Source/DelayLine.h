@@ -21,7 +21,7 @@ public:
     void setReadPosition(float delayTime);
     float* getWritePointer(int channel);
     void prepare(float sampleRate, float maxDelaySeconds);
-
+    
     void tapIn(float sample); /// add input to delay line at write position
     float tapOut(); /// get output at read position
     

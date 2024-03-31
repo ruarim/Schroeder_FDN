@@ -25,7 +25,7 @@ public:
     ~FeedbackMatrix(){};
     
     /// Performs the scattering operation - takes values from delays in - scatters - outputs scattered
-    std::vector<float> process(std::vector<float> signalIn, int numDelays)
+    std::vector<float> process(std::vector<float> signalIn, int numDelays, float dampening)
     {
         if (!isPowerOfTwo(numDelays)) {
                 throw std::invalid_argument("numDelays must be a power of 2.");
@@ -34,16 +34,14 @@ public:
         /// create matrix
         std::vector<std::vector<float>> matrix(numDelays, std::vector<float>(numDelays, 0.0));
         generateHadamard(matrix, numDelays);
-        
-        float g = 1.0f; // feedback dampening
-        
+                
         /// apply vector matrix multiplication
         std::vector<float> signalOut(numDelays, 0.0f);
         for(size_t i = 0; i < numDelays; ++i)
         {
             for(size_t j = 0; j < numDelays; ++j)
             {
-                signalOut[i] += (matrix[i][j] * signalIn[j]) * g;
+                signalOut[i] += (matrix[i][j] * signalIn[j]) * dampening;
             }
         }
         

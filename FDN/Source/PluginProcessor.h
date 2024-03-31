@@ -12,6 +12,7 @@
 #include "DelayLine.h"
 #include "FeedbackMatrix.h"
 #include "ParallelProcessor.h"
+#include "SchroederAllpass.h"
 
 //==============================================================================
 /**
@@ -57,28 +58,40 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 private:
+    // TESTING PARAMS - REMOVE
     juce::AudioParameterBool* burstParam;
-    
     float burstGain = 0.0f;
-    float burstWidth = 0.10;
+    float burstWidth = 0.10f;
     size_t burstSamples = 0;
     
-    static const size_t numDelays = 4; // 4 left 4 right
-    float maxReverbSeconds = 2.0;
-    float delayTimes[numDelays] = { 0.153129f, 0.210389f, 0.127837f, 0.256891f};
-    float feedbackDampening = 0.125f; // add array of dampening for more colouration
-    //float outGains[numDelays] = { 0.2, 0.4, 0.5, 0.3};
+    /// reverb constants
+    static const size_t numDelays = 4; /// 4 left 4 right
+    static constexpr float maxReverbSeconds = 2.0f;
+    static constexpr const float allpassDelays[numDelays] = { 0.020346f, 0.024421f, 0.031604f, 0.027333f}; /// =  M
+    static constexpr float allpassG = 0.6f;
+    static constexpr float delayTimes   [numDelays] =  { 0.153129f, 0.210389f, 0.127837f, 0.256891f}; /// =  L + M // feedbackDelays
+    // float outGains[numDelays] = { 0.2, 0.4, 0.5, 0.3};  // add array of dampening for more colouration
     
-    std::vector<DelayLine*> delays; // use juce::dsp intead
+    std::array<DelayLine*, numDelays> delays; // use juce::dsp instead?
+    
     FeedbackMatrix fbMatrix;
+    float feedbackDampening = 0.5f;
     
     using Filter       = juce::dsp::IIR::Filter<float>;
     using Coefficients = juce::dsp::IIR::ArrayCoefficients<float>;
-    
-    int delayFilterCutoff = 8000;
+    int delayFilterCutoff = 10000;
     
     std::array<Filter, numDelays> delayFilters;
-    std::array<Filter, numDelays> allpass_combs;
+    std::array<SchroederAllpass, numDelays> allpassCombs;
+    
+    // master effects
+    Filter masterLowshelf;
+    int lowshelfFreq   = 200;
+    float lowshelfGain = 0.7f;
+    float lowshelfQ    = 0.2;
+    
+    Filter masterLowpass;
+    float lowpassFreq  = 6000.0f;
     
     float testImpulse()
     {
@@ -89,13 +102,6 @@ private:
         
         return signal;
     }
-    
-    void scaleDelayTimes(float scaleFactor) {
-        for (size_t i = 0; i < numDelays; ++i) {
-            delayTimes[i] *= scaleFactor;
-        }
-    }
-    
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FDNAudioProcessor)
