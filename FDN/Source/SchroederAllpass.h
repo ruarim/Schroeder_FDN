@@ -29,8 +29,8 @@ public:
 
     void prepare(float sampleRate, float maxDelay)
     {
-        xDelay->prepare(sampleRate, maxDelay);
-        yDelay->prepare(sampleRate, maxDelay);
+        xDelay->prepare(sampleRate, maxDelay, 1); // mono delay
+        yDelay->prepare(sampleRate, maxDelay, 1);
     }
     
     void setDelay(float delaySeconds)
@@ -42,15 +42,15 @@ public:
     float processSample(float sample)
     {
         /// get y/x - M
-        float xDelayed = xDelay->tapOut();
-        float yDelayed = yDelay->tapOut();
+        float xDelayed = xDelay->tapOut(0); // channel zero
+        float yDelayed = yDelay->tapOut(0);
         
         /// difference equation:  y[n] = -g * x[n] + x[n - M] + g * y[n-M]
         float y = -g * sample + xDelayed + g * yDelayed;
         
         /// write to delay line
-        xDelay->tapIn(sample);
-        yDelay->tapIn(y);
+        xDelay->tapIn(sample, 0);
+        yDelay->tapIn(y, 0);
         this->advance();
         return y;
     }

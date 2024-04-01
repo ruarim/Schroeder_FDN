@@ -65,13 +65,18 @@ private:
     size_t burstSamples = 0;
     
     /// reverb constants
-    static const size_t numDelays = 4; /// 4 left 4 right
+    static const size_t numDelays = 4;
     static const size_t numOutChannels = 2;
-    const std::array<float, numDelays> allpassDelays = { 0.020346f, 0.024421f, 0.031604f, 0.027333f }; /// M - 0.022904f, 0.029291f, 0.013458f, 0.019123f
-    const std::array<float, numDelays> delayTimes    = { 0.153129f, 0.210389f, 0.127837f, 0.256891f }; /// L + M -  0.174713f, 0.192303f, 0.125000f, 0.219991f
-    const  float maxReverbSeconds = 2.0f;
+    const float maxDelaySeconds = 2.0f;
+    static const int mono = 1;
+    static const int stereo = 2;
+    const std::array<float, numDelays> allpassDelays = { 0.020346f, 0.024421f, 0.031604f, 0.027333f }; /// - 0.022904f, 0.029291f, 0.013458f, 0.019123f (for higher channel out)
+    const std::array<float, numDelays> delayTimes    = { 0.153129f, 0.210389f, 0.127837f, 0.256891f }; /// -  0.174713f, 0.192303f, 0.125000f, 0.219991f (....same)
     
     DelayLine* predelay;
+    juce::AudioParameterFloat* predelayParam;
+    float predelayTime = 0.0f;
+    
     std::array<DelayLine*, numDelays> feedbackDelays; // use juce::dsp instead?
     
     FeedbackMatrix<numDelays> fbMatrix;
@@ -92,7 +97,7 @@ private:
     juce::AudioParameterInt* lowshelfCutoffParam;
     float lowshelfGain = 0.7f;
     float lowshelfQ    = 0.2f;
-    
+        
     /// lowpass
     int lowpassCutoff  = 6000; // PARAM
     juce::AudioParameterInt* lowpassCutoffParam;
@@ -107,7 +112,9 @@ private:
     using StereoFilter = juce::dsp::ProcessorDuplicator<Filter, Coefficients>;
     juce::dsp::ProcessorChain<StereoFilter, StereoFilter> masterEffects;
     
-    static const size_t numChannels = 2;;
+    juce::dsp::DryWetMixer <float> mixer;
+    juce::AudioParameterFloat* mixParam;
+    float mix = 1.0f;
     
     float testImpulse()
     {
@@ -134,8 +141,12 @@ private:
             {
                 distributed[i] = right / numDelays;
                 if(i % 2 != 0) distributed[i] *= -1; /// sign inversion
-                
             }
+            
+//            /// interleave input
+//            if(i % 2 == 0) distributed[i] = left / numDelays;
+//            else distributed[i] = right / numDelays;
+            
         }
         
         return distributed;
@@ -164,6 +175,12 @@ private:
         
         feedbackDecayParam = new juce::AudioParameterFloat("feedbackDecay", "Decay", 0.0f, 0.99f, 0.5f);
         addParameter(feedbackDecayParam);
+        
+        mixParam = new juce::AudioParameterFloat("mix", "Dry/Wet", 0.0f, 1.0f, 1.0f);
+        addParameter(mixParam);
+        
+        predelayParam = new juce::AudioParameterFloat("predelay", "Predelay", 0.0f, maxDelaySeconds/2, 0.0f);
+        addParameter(predelayParam);
     }
     
     void getUIParams() // remove and add listener
@@ -172,6 +189,8 @@ private:
         lowpassCutoff = lowpassCutoffParam->get();
         feedbackDecay = feedbackDecayParam->get();
         delayFilterCutoff = delayFiltersCutoffParam->get();
+        mix = mixParam->get();
+        predelayTime = predelayParam->get();
     }
     
     void makeFilterCoefficients()
@@ -183,6 +202,8 @@ private:
         *lowshelf.state = ArrayCoefficients::makeLowShelf(sampleRate, lowshelfCutoff, lowshelfQ, lowshelfGain);
         *lowpass .state = ArrayCoefficients::makeLowPass(sampleRate, lowpassCutoff);
     }
+    
+    void scaleDelaysTimes(){} /// multiply the delays by an amount 1 - 5 ?
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FDNAudioProcessor)

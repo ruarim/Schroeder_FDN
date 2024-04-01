@@ -27,8 +27,10 @@ FDNAudioProcessor::FDNAudioProcessor()
     // allocate delays
     for(size_t i = 0; i < numDelays; ++i)
     {
-        feedbackDelays[i] = new DelayLine();
+        feedbackDelays[i] = new DelayLine;
     }
+    
+    predelay = new DelayLine;
 }
 
 FDNAudioProcessor::~FDNAudioProcessor()
@@ -37,6 +39,8 @@ FDNAudioProcessor::~FDNAudioProcessor()
     {
         delete feedbackDelays[i];
     }
+    
+    delete predelay;
 }
 
 //==============================================================================
@@ -114,18 +118,22 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     for(size_t i = 0; i < numDelays; ++i)
     {
         /// set up delays
-        feedbackDelays[i]->prepare(sampleRate, maxReverbSeconds);
+        feedbackDelays[i]->prepare(sampleRate, maxDelaySeconds, mono);
         feedbackDelays[i]->setReadPosition(delayTimes[i]);
         
         /// pre feedback matric allpass filters
-        allpassCombs[i].prepare(sampleRate, maxReverbSeconds);
+        allpassCombs[i].prepare(sampleRate, maxDelaySeconds);
         allpassCombs[i].setDelay(allpassDelays[i]);
         
         /// delay lowpass filters
         delayFilters[i] .prepare(spec);
     }
-
+    
+    predelay->prepare(sampleRate, maxDelaySeconds, stereo);
     masterEffects.prepare(spec);
+    
+    mixer.prepare(spec);
+    mixer.reset();
 }
 
 void FDNAudioProcessor::releaseResources()
@@ -180,25 +188,27 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     getUIParams();
     makeFilterCoefficients();
     
+    mixer.setWetMixProportion(mix);
+    juce::dsp::AudioBlock <float> block (buffer);
+    mixer.pushDrySamples(block);
+    
+    predelay->setReadPosition(predelayTime); // creates artifacts
+        
     /// output
     for (size_t sample = 0; sample < numSamples; ++sample)
     {
         /// output values
-        std::array<float, numChannels> stereoOut = { 0.0f, 0.0f };
+        std::array<float, numOutChannels> stereoOut = { 0.0f, 0.0f };
         std::array<float, numDelays>   feedbackIn;
         std::array<float, numDelays>   feedbackOut;
-        
-        // some portion of the signal sent directly out - add dry wet
-        //signal *= 0.2; // dry/wet add source receiver delay
-        
+                
         /// feedback out
         for(size_t i = 0; i < numDelays; ++i)
         {
             // get delayed signal
-            float delayed = feedbackDelays[i]->tapOut();
+            float delayed = feedbackDelays[i]->tapOut(0);
             
-            
-            /// sum  stereos out
+            /// sum  stereos out - CHANGE TO MIXER DESIGN FROM PAPER
             if (i < numDelays / 2) stereoOut[0] += delayed;
             else stereoOut[1] += delayed;
 //            stereoOut = stereoOutput(delayed);
@@ -214,28 +224,31 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
             
         /// apply feedback matrix
         feedbackOut = fbMatrix.process(feedbackIn, feedbackDecay);
-            
         
-        // add pre delay
+        /// stereo input samples
+        std::array<float, stereo> stereoIn = { buffer.getReadPointer(0)[sample], buffer.getReadPointer(1)[sample] };
         
-        
-        /// input values
-        float leftIn   = buffer.getReadPointer(0)[sample];
-        float rightIn  = buffer.getReadPointer(1)[sample];
+        /// apply pre delay
+        for(int channel = 0; channel < stereo; ++channel)
+        {
+            predelay->tapIn(stereoIn[channel], channel);
+            stereoIn[channel] = predelay->tapOut(channel);
+        }
+        predelay->advance();
         
         /// distribute  and scale the input to N number of delays
-        std::array<float, numDelays> splitInput = stereoDistribute(leftIn, rightIn);
+        std::array<float, numDelays> splitInput = stereoDistribute(stereoIn[0], stereoIn[1]);
         
         /// feedback in
         for(size_t i = 0; i < numDelays; ++i)
         {
             float delayFilterGain =  (1 / std::sqrt(numDelays)); /// for stability
-            //delayFilters[i].snapToZero(); /// see juce_IIRFilter header
+            delayFilters[i].snapToZero(); /// see juce_IIRFilter header
             
             /// lowpass filter  the feedback output
             float delayedFiltered = delayFilters[i].processSample(feedbackOut[i]) * delayFilterGain;
                 
-            feedbackDelays[i]->tapIn(delayedFiltered + splitInput[i]); // avoid instability
+            feedbackDelays[i]->tapIn(delayedFiltered + splitInput[i], 0); // avoid instability
             
             // move delays forward one sample
             feedbackDelays[i]->advance();
@@ -250,10 +263,9 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     }
     
     // apply master effects
-    juce::dsp::AudioBlock <float> block (buffer);
     juce::dsp::ProcessContextReplacing<float> context (block);
     masterEffects.process(context);
-
+    mixer.mixWetSamples(block);
 }
 
 //==============================================================================

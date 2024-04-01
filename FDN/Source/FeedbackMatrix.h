@@ -24,13 +24,11 @@ public:
     FeedbackMatrix(){};
     ~FeedbackMatrix(){};
     
-    /// Performs the scattering operation - takes values from delays in - scatters - outputs scattered
-    std::array<float, numDelays> process(std::array<float, numDelays> signalIn, float dampening)
+    /// Performs the matrix multiplication
+    std::array<float, numDelays> process(std::array<float, numDelays> signalIn, float feedbackGain)
     {
         assert(isPowerOfTwo(numDelays));
-        
-        // IS THIS COLUMN VECTOR MATRIX MULTIPLCATION
-        
+                
         /// create matrix
         std::array<std::array<float, numDelays>, numDelays> matrix;
         generateHadamard(matrix, numDelays);
@@ -41,11 +39,16 @@ public:
         {
             for(size_t j = 0; j < numDelays; ++j)
             {
-                signalOut[i] += (matrix[i][j] * signalIn[j]) * dampening;
+                signalOut[i] += (matrix[i][j] * signalIn[j]);
             }
         }
         
-        /// return result
+        
+        /// apply feedback gain
+        for (int i = 0; i < numDelays; ++i) {
+            signalOut[i] *= feedbackGain;
+        }
+        
         return signalOut;
     }
     

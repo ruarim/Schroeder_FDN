@@ -16,10 +16,10 @@ DelayLine::DelayLine(){ };
 DelayLine::~DelayLine(){ };
 
 // set up the buffer for the delay line
-void DelayLine::prepare(float sampleRate, float maxDelaySeconds){
+void DelayLine::prepare(float sampleRate, float maxDelaySeconds, int numChannels){
     this->sampleRate = sampleRate;
     bufferLength = (int)(maxDelaySeconds * sampleRate);
-    buffer.setSize(1, bufferLength); // use a mono delay line
+    buffer.setSize(numChannels, bufferLength);
     buffer.clear();
 }
 
@@ -30,16 +30,16 @@ void DelayLine::setReadPosition(float delayTime){
 }
 
 // handle processing the samples here instead of giving write pointer?
-void DelayLine::tapIn(float sample)
+void DelayLine::tapIn(float sample, int channel)
 {
     assertPrepare();
-    buffer.getWritePointer(0)[writePosition] = sample;
+    buffer.getWritePointer(channel)[writePosition] = sample;
 }
 
-float DelayLine::tapOut()
+float DelayLine::tapOut(int channel)
 {
     assertPrepare();
-    return buffer.getWritePointer(0)[readPosition];
+    return buffer.getWritePointer(channel)[readPosition];
 }
 
 // call this after writing to the delay line

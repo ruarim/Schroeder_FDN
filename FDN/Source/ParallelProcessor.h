@@ -51,7 +51,7 @@ public:
 
     /** The actual processors */
     std::array<ProcessorType, numProcessors> processors;
-
+    
 private:
     
 
