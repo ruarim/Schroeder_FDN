@@ -17,8 +17,8 @@ class SchroederAllpass /// first order allpass comb fitler
 {
 public:
     SchroederAllpass(){
-        xDelay = new DelayLine();
-        yDelay = new DelayLine();
+        xDelay = new DelayLine;
+        yDelay = new DelayLine;
     };
     
     ~SchroederAllpass(){
@@ -56,7 +56,7 @@ public:
     }
 
 private:
-    float g = 0.6;
+    const float g = 0.7f;
     DelayLine* xDelay;
     DelayLine* yDelay;
     

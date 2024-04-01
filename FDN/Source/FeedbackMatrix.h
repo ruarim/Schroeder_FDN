@@ -12,12 +12,12 @@
 #include <vector>
 #include <cmath>
 
-#include <cmath>
 
 bool isPowerOfTwo(int n) {
     return (ceil(log2(n)) == floor(log2(n)));
 }
 
+template<int numDelays>
 class FeedbackMatrix
 {
 public:
@@ -25,18 +25,18 @@ public:
     ~FeedbackMatrix(){};
     
     /// Performs the scattering operation - takes values from delays in - scatters - outputs scattered
-    std::vector<float> process(std::vector<float> signalIn, int numDelays, float dampening)
+    std::array<float, numDelays> process(std::array<float, numDelays> signalIn, float dampening)
     {
-        if (!isPowerOfTwo(numDelays)) {
-                throw std::invalid_argument("numDelays must be a power of 2.");
-        }
+        assert(isPowerOfTwo(numDelays));
+        
+        // IS THIS COLUMN VECTOR MATRIX MULTIPLCATION
         
         /// create matrix
-        std::vector<std::vector<float>> matrix(numDelays, std::vector<float>(numDelays, 0.0));
+        std::array<std::array<float, numDelays>, numDelays> matrix;
         generateHadamard(matrix, numDelays);
                 
         /// apply vector matrix multiplication
-        std::vector<float> signalOut(numDelays, 0.0f);
+        std::array<float, numDelays> signalOut;
         for(size_t i = 0; i < numDelays; ++i)
         {
             for(size_t j = 0; j < numDelays; ++j)
@@ -50,13 +50,13 @@ public:
     }
     
 private:
-    void generateHadamard(std::vector<std::vector<float>>& matrix, int n) {
-        if (n == 1) {
+    void generateHadamard(std::array<std::array<float, numDelays>, numDelays>& matrix, int N) {
+        if (N == 1) {
             matrix[0][0] = 1;
             return;
         }
         
-        int half = n / 2;
+        int half = N / 2;
         generateHadamard(matrix, half);
         
         /// Copy top-left quadrant to other quadrants
