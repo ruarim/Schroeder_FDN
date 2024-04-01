@@ -28,11 +28,7 @@ public:
     std::array<float, numDelays> process(std::array<float, numDelays> signalIn, float feedbackGain)
     {
         assert(isPowerOfTwo(numDelays));
-                
-        /// create matrix
-        std::array<std::array<float, numDelays>, numDelays> matrix;
-        generateHadamard(matrix, numDelays);
-                
+        
         /// apply vector matrix multiplication
         std::array<float, numDelays> signalOut;
         for(size_t i = 0; i < numDelays; ++i)
@@ -52,7 +48,13 @@ public:
         return signalOut;
     }
     
+    void init(){
+        generateHadamard(matrix, numDelays);
+    }
+    
 private:
+    std::array<std::array<float, numDelays>, numDelays> matrix;
+    
     void generateHadamard(std::array<std::array<float, numDelays>, numDelays>& matrix, int N) {
         if (N == 1) {
             matrix[0][0] = 1;

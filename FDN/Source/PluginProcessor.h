@@ -97,7 +97,7 @@ private:
     juce::AudioParameterInt* lowshelfCutoffParam;
     float lowshelfGain = 0.7f;
     float lowshelfQ    = 0.2f;
-        
+    
     /// lowpass
     int lowpassCutoff  = 6000; // PARAM
     juce::AudioParameterInt* lowpassCutoffParam;

@@ -115,6 +115,8 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     spec.numChannels = getTotalNumOutputChannels();
     burstSamples = (burstWidth * (float)sampleRate);
     
+    fbMatrix.init(); /// generate the feedback matrix
+    
     for(size_t i = 0; i < numDelays; ++i)
     {
         /// set up delays
