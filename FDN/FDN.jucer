@@ -5,9 +5,15 @@
               pluginFormats="buildStandalone,buildVST3">
   <MAINGROUP id="D0uMP9" name="FDN">
     <GROUP id="{8AB9F169-4864-45C0-AFE7-937543E293EC}" name="Source">
-      <FILE id="DpR8Hl" name="FeedbackMatrix.h" compile="0" resource="0"
-            file="Source/FeedbackMatrix.h"/>
+      <GROUP id="{B8FD126A-61A8-4D7A-407D-AA74C661607B}" name="GUI">
+        <FILE id="shYf9o" name="ReverbControls.cpp" compile="1" resource="0"
+              file="Source/ReverbControls.cpp"/>
+        <FILE id="NsQWhK" name="ReverbControls.h" compile="0" resource="0"
+              file="Source/ReverbControls.h"/>
+      </GROUP>
       <GROUP id="{160BC957-8E39-99EE-3952-76EA27371E41}" name="utils">
+        <FILE id="eJgoC9" name="ChannelManager.h" compile="0" resource="0"
+              file="Source/ChannelManager.h"/>
         <FILE id="PvomCr" name="SchroederAllpass.h" compile="0" resource="0"
               file="Source/SchroederAllpass.h"/>
         <FILE id="ic9F9D" name="ParallelProcessor.h" compile="0" resource="0"
@@ -15,6 +21,10 @@
         <FILE id="U1vVWX" name="DelayLine.cpp" compile="1" resource="0" file="Source/DelayLine.cpp"/>
         <FILE id="HZr22B" name="DelayLine.h" compile="0" resource="0" file="Source/DelayLine.h"/>
       </GROUP>
+      <FILE id="nER01X" name="DelayFilterbank.h" compile="0" resource="0"
+            file="Source/DelayFilterbank.h"/>
+      <FILE id="DpR8Hl" name="FeedbackMatrix.h" compile="0" resource="0"
+            file="Source/FeedbackMatrix.h"/>
       <FILE id="iwYYkM" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="cbYccN" name="PluginProcessor.h" compile="0" resource="0"

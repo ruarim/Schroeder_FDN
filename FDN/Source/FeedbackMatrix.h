@@ -12,11 +12,6 @@
 #include <vector>
 #include <cmath>
 
-
-bool isPowerOfTwo(int n) {
-    return (ceil(log2(n)) == floor(log2(n)));
-}
-
 template<int numDelays>
 class FeedbackMatrix
 {
@@ -72,5 +67,9 @@ private:
                 matrix[i + half][j + half] = -matrix[i][j]; /// Bottom-right
             }
         }
+    }
+    
+    bool isPowerOfTwo(int n) {
+        return (ceil(log2(n)) == floor(log2(n)));
     }
 };

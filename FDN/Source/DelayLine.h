@@ -13,7 +13,7 @@
 #include <JuceHeader.h>
 
 /// mono delay line
-class DelayLine
+class DelayLine // reduce to header file
 {
 public:
     DelayLine();

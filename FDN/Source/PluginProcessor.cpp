@@ -22,8 +22,6 @@ FDNAudioProcessor::FDNAudioProcessor()
                        )
 #endif
 {
-    makeUIParams();
-    
     // allocate delays
     for(size_t i = 0; i < numDelays; ++i)
     {
@@ -113,7 +111,6 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     spec.maximumBlockSize = samplesPerBlock;
     spec.sampleRate = sampleRate;
     spec.numChannels = getTotalNumOutputChannels();
-    burstSamples = (burstWidth * (float)sampleRate);
     
     fbMatrix.init(); /// generate the feedback matrix
     
@@ -179,15 +176,7 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
-    
-    bool burst = burstParam->get();
-    if (burst)
-    {
-        burstParam->setValueNotifyingHost(0);
-        burstGain = 1.0f;
-    }
-    
-    getUIParams();
+
     makeFilterCoefficients();
     
     mixer.setWetMixProportion(mix);
@@ -278,7 +267,7 @@ bool FDNAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* FDNAudioProcessor::createEditor()
 {
-    return new juce::GenericAudioProcessorEditor(*this);
+    return new FDNAudioProcessorEditor(*this);
 }
 
 //==============================================================================

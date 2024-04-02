@@ -56,14 +56,20 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-
-private:
-    // TESTING PARAMS - REMOVE IN FINAL
-    juce::AudioParameterBool* burstParam;
-    float burstGain = 0.0f;
-    float burstWidth = 0.10f;
-    size_t burstSamples = 0;
     
+    // PARAMETERS
+    float predelayTime    = 0.0f;
+    int delayFilterCutoff = 10000;
+    float feedbackDecay   = 0.9f;
+    /// lowshelf
+    int lowshelfCutoff    = 200;
+    float lowshelfGain    = 0.7f;
+    float lowshelfQ       = 0.2f;
+    /// lowpass
+    int lowpassCutoff     = 6000;
+    float mix             = 1.0f;
+
+private:    
     /// reverb constants
     static const size_t numDelays = 4;
     static const size_t numOutChannels = 2;
@@ -74,34 +80,14 @@ private:
     const std::array<float, numDelays> delayTimes    = { 0.153129f, 0.210389f, 0.127837f, 0.256891f }; /// -  0.174713f, 0.192303f, 0.125000f, 0.219991f (....same)
     
     DelayLine* predelay;
-    juce::AudioParameterFloat* predelayParam;
-    float predelayTime = 0.0f;
-    
     std::array<DelayLine*, numDelays> feedbackDelays; // use juce::dsp instead?
-    
     FeedbackMatrix<numDelays> fbMatrix;
-    float feedbackDecay = 0.9f; // PARAM
-    juce::AudioParameterFloat* feedbackDecayParam;
     
     using Filter            = juce::dsp::IIR::Filter<float>;
     using ArrayCoefficients = juce::dsp::IIR::ArrayCoefficients<float>;
-    
-    int delayFilterCutoff = 10000; // PARAM
-    juce::AudioParameterInt* delayFiltersCutoffParam;
     std::array<Filter, numDelays> delayFilters;
     std::array<SchroederAllpass, numDelays> allpassCombs;
      
-    /// master effects
-    /// lowshelf
-    int lowshelfCutoff   = 200; // PARAM
-    juce::AudioParameterInt* lowshelfCutoffParam;
-    float lowshelfGain = 0.7f;
-    float lowshelfQ    = 0.2f;
-    
-    /// lowpass
-    int lowpassCutoff  = 6000; // PARAM
-    juce::AudioParameterInt* lowpassCutoffParam;
-    
     enum
     {
         lowshelfIndex,
@@ -113,18 +99,6 @@ private:
     juce::dsp::ProcessorChain<StereoFilter, StereoFilter> masterEffects;
     
     juce::dsp::DryWetMixer <float> mixer;
-    juce::AudioParameterFloat* mixParam;
-    float mix = 1.0f;
-    
-    float testImpulse()
-    {
-        float signal = (2.0f * (((float)rand() / RAND_MAX) - 0.5f)) * burstGain;
-        
-        if (burstGain >= 0.0)
-            burstGain = burstGain - 1.0 / burstSamples;
-        
-        return signal;
-    }
         
     /// distribute input
     std::array<float, numDelays> stereoDistribute(float left, float right)
@@ -158,41 +132,7 @@ private:
         if(i < numDelays / 2) output[0] += signal;
         else output[1] += signal;
     }
-    
-    void makeUIParams()
-    {
-        burstParam = new juce::AudioParameterBool("burst", "Burst", false);
-        addParameter(burstParam);
         
-        lowshelfCutoffParam = new juce::AudioParameterInt("lowshelfCutoff", "Low Shelf Cutoff", 10, 10000, 125);
-        addParameter(lowshelfCutoffParam);
-        
-        lowpassCutoffParam  = new juce::AudioParameterInt("lowpassCutoff", "Low Pass Cutoff", 200, 20000, 7000);
-        addParameter(lowpassCutoffParam);
-        
-        delayFiltersCutoffParam = new juce::AudioParameterInt("delayDampening", "Dampening", 2000, 20000, 10000);
-        addParameter(delayFiltersCutoffParam);
-        
-        feedbackDecayParam = new juce::AudioParameterFloat("feedbackDecay", "Decay", 0.0f, 0.99f, 0.5f);
-        addParameter(feedbackDecayParam);
-        
-        mixParam = new juce::AudioParameterFloat("mix", "Dry/Wet", 0.0f, 1.0f, 1.0f);
-        addParameter(mixParam);
-        
-        predelayParam = new juce::AudioParameterFloat("predelay", "Predelay", 0.0f, maxDelaySeconds/2, 0.0f);
-        addParameter(predelayParam);
-    }
-    
-    void getUIParams() // remove and add listener
-    {
-        lowshelfCutoff = lowshelfCutoffParam->get();
-        lowpassCutoff = lowpassCutoffParam->get();
-        feedbackDecay = feedbackDecayParam->get();
-        delayFilterCutoff = delayFiltersCutoffParam->get();
-        mix = mixParam->get();
-        predelayTime = predelayParam->get();
-    }
-    
     void makeFilterCoefficients()
     {
         float sampleRate = getSampleRate();
@@ -202,9 +142,7 @@ private:
         *lowshelf.state = ArrayCoefficients::makeLowShelf(sampleRate, lowshelfCutoff, lowshelfQ, lowshelfGain);
         *lowpass .state = ArrayCoefficients::makeLowPass(sampleRate, lowpassCutoff);
     }
-    
-    void scaleDelaysTimes(){} /// multiply the delays by an amount 1 - 5 ?
-    
+        
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FDNAudioProcessor)
 };
