@@ -68,7 +68,7 @@ private:
     std::unique_ptr<juce::Label> dampeningLabel;
     std::unique_ptr<juce::Slider> dryWetSlider;
     std::unique_ptr<juce::Label> dryWetLabel;
-    std::unique_ptr<juce::Label> decayLabel;
+    std::unique_ptr<juce::Label> feedbackLabel;
 
 
     //==============================================================================

@@ -11,8 +11,8 @@
 #include <JuceHeader.h>
 #include "DelayLine.h"
 #include "FeedbackMatrix.h"
-#include "ParallelProcessor.h"
 #include "SchroederAllpass.h"
+#include "DelayFilters.h"
 
 //==============================================================================
 /**
@@ -58,16 +58,16 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
     
     // PARAMETERS
-    float predelayTime    = 0.0f;
-    int delayFilterCutoff = 10000;
-    float feedbackDecay   = 0.9f;
+    float predelayTime      = 0.0f;
+    float feedbackDecay     = 0.9f;
     /// lowshelf
-    int lowshelfCutoff    = 200;
-    float lowshelfGain    = 0.7f;
-    float lowshelfQ       = 0.2f;
+    float lowshelfCutoff    = 5000.0f;
+    float lowshelfGain      = 0.0f;
+    float lowshelfQ         = 2.0f;
     /// lowpass
-    int lowpassCutoff     = 6000;
-    float mix             = 1.0f;
+    int   lowpassCutoff     = 6000;
+    /// dray wet
+    float mix               = 1.0f;
 
 private:    
     /// reverb constants
@@ -80,24 +80,10 @@ private:
     const std::array<float, numDelays> delayTimes    = { 0.153129f, 0.210389f, 0.127837f, 0.256891f }; /// -  0.174713f, 0.192303f, 0.125000f, 0.219991f (....same)
     
     DelayLine* predelay;
-    std::array<DelayLine*, numDelays> feedbackDelays; // use juce::dsp instead?
+    std::array    <DelayLine*, numDelays> feedbackDelays;
+    std::array    <SchroederAllpass, numDelays> allpassCombs;
+    DelayFilters  <numDelays> delayFilters;
     FeedbackMatrix<numDelays> fbMatrix;
-    
-    using Filter            = juce::dsp::IIR::Filter<float>;
-    using ArrayCoefficients = juce::dsp::IIR::ArrayCoefficients<float>;
-    std::array<Filter, numDelays> delayFilters;
-    std::array<SchroederAllpass, numDelays> allpassCombs;
-     
-    enum
-    {
-        lowshelfIndex,
-        lowpassIndex,
-    };
-    
-    using Coefficients = juce::dsp::IIR::Coefficients <float>;
-    using StereoFilter = juce::dsp::ProcessorDuplicator<Filter, Coefficients>;
-    juce::dsp::ProcessorChain<StereoFilter, StereoFilter> masterEffects;
-    
     juce::dsp::DryWetMixer <float> mixer;
         
     /// distribute input
@@ -132,17 +118,7 @@ private:
         if(i < numDelays / 2) output[0] += signal;
         else output[1] += signal;
     }
-        
-    void makeFilterCoefficients()
-    {
-        float sampleRate = getSampleRate();
-        for(auto& df : delayFilters) *df.coefficients = ArrayCoefficients::makeLowPass(sampleRate, delayFilterCutoff);
-        auto& lowshelf = masterEffects.get<lowshelfIndex>();
-        auto& lowpass = masterEffects.get<lowpassIndex>();
-        *lowshelf.state = ArrayCoefficients::makeLowShelf(sampleRate, lowshelfCutoff, lowshelfQ, lowshelfGain);
-        *lowpass .state = ArrayCoefficients::makeLowPass(sampleRate, lowpassCutoff);
-    }
-        
+    
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FDNAudioProcessor)
 };

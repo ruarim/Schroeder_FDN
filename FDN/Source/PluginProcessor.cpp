@@ -22,7 +22,7 @@ FDNAudioProcessor::FDNAudioProcessor()
                        )
 #endif
 {
-    // allocate delays
+    // allocate feedback delays
     for(size_t i = 0; i < numDelays; ++i)
     {
         feedbackDelays[i] = new DelayLine;
@@ -123,14 +123,10 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
         /// pre feedback matric allpass filters
         allpassCombs[i].prepare(sampleRate, maxDelaySeconds);
         allpassCombs[i].setDelay(allpassDelays[i]);
-        
-        /// delay lowpass filters
-        delayFilters[i] .prepare(spec);
     }
     
     predelay->prepare(sampleRate, maxDelaySeconds, stereo);
-    masterEffects.prepare(spec);
-    
+    delayFilters.prepare(spec);
     mixer.prepare(spec);
     mixer.reset();
 }
@@ -177,13 +173,14 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    makeFilterCoefficients();
+    delayFilters.setLowpassCutoff(lowpassCutoff);
+    delayFilters.setLowshelfCoefficents(lowshelfCutoff, lowshelfQ, lowshelfGain);
     
     mixer.setWetMixProportion(mix);
     juce::dsp::AudioBlock <float> block (buffer);
     mixer.pushDrySamples(block);
     
-    predelay->setReadPosition(predelayTime); // creates artifacts
+    predelay->setReadPosition(predelayTime); // creates artifacts when moving?
         
     /// output
     for (size_t sample = 0; sample < numSamples; ++sample)
@@ -199,10 +196,9 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
             // get delayed signal
             float delayed = feedbackDelays[i]->tapOut(0);
             
-            /// sum  stereos out - CHANGE TO MIXER DESIGN FROM PAPER
+            /// sum  stereos out
             if (i < numDelays / 2) stereoOut[0] += delayed;
             else stereoOut[1] += delayed;
-//            stereoOut = stereoOutput(delayed);
             
             feedbackIn[i] = delayed;
         }
@@ -233,13 +229,10 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         /// feedback in
         for(size_t i = 0; i < numDelays; ++i)
         {
-            float delayFilterGain =  (1 / std::sqrt(numDelays)); /// for stability
-            delayFilters[i].snapToZero(); /// see juce_IIRFilter header
-            
             /// lowpass filter  the feedback output
-            float delayedFiltered = delayFilters[i].processSample(feedbackOut[i]) * delayFilterGain;
+            float delayedFiltered = delayFilters.processSample(feedbackOut[i]);
                 
-            feedbackDelays[i]->tapIn(delayedFiltered + splitInput[i], 0); // avoid instability
+            feedbackDelays[i]->tapIn(delayedFiltered + splitInput[i], 0);
             
             // move delays forward one sample
             feedbackDelays[i]->advance();
@@ -253,9 +246,6 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         }
     }
     
-    // apply master effects
-    juce::dsp::ProcessContextReplacing<float> context (block);
-    masterEffects.process(context);
     mixer.mixWetSamples(block);
 }
 

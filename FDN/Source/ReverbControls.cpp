@@ -48,7 +48,7 @@ ReverbControls::ReverbControls (FDNAudioProcessor& p)
 
     lowshelfGainRotary.reset (new juce::Slider ("LowShelfGainRotary"));
     addAndMakeVisible (lowshelfGainRotary.get());
-    lowshelfGainRotary->setRange (-10, 10, 0.1);
+    lowshelfGainRotary->setRange (-20, 0, 0.1);
     lowshelfGainRotary->setSliderStyle (juce::Slider::RotaryVerticalDrag);
     lowshelfGainRotary->setTextBoxStyle (juce::Slider::TextBoxBelow, false, 80, 20);
     lowshelfGainRotary->setColour (juce::Slider::thumbColourId, juce::Colours::white);
@@ -63,7 +63,7 @@ ReverbControls::ReverbControls (FDNAudioProcessor& p)
     lowpassCutoffRotary->setTextBoxStyle (juce::Slider::TextBoxBelow, false, 80, 20);
     lowpassCutoffRotary->setColour (juce::Slider::thumbColourId, juce::Colours::white);
     lowpassCutoffRotary->addListener (this);
-    lowpassCutoffRotary->setSkewFactor (2);
+    lowpassCutoffRotary->setSkewFactor (0.5);
 
     lowpassCutoffRotary->setBounds (346, 32, 167, 120);
 
@@ -140,16 +140,16 @@ ReverbControls::ReverbControls (FDNAudioProcessor& p)
 
     dryWetLabel->setBounds (301, 265, 150, 24);
 
-    decayLabel.reset (new juce::Label ("DecayLabel",
-                                       TRANS ("Decay")));
-    addAndMakeVisible (decayLabel.get());
-    decayLabel->setFont (juce::Font (18.00f, juce::Font::plain).withTypefaceStyle ("Regular"));
-    decayLabel->setJustificationType (juce::Justification::centred);
-    decayLabel->setEditable (false, false, false);
-    decayLabel->setColour (juce::TextEditor::textColourId, juce::Colours::black);
-    decayLabel->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0x00000000));
+    feedbackLabel.reset (new juce::Label ("FeebackLabel",
+                                          TRANS ("Feedback")));
+    addAndMakeVisible (feedbackLabel.get());
+    feedbackLabel->setFont (juce::Font (18.00f, juce::Font::plain).withTypefaceStyle ("Regular"));
+    feedbackLabel->setJustificationType (juce::Justification::centred);
+    feedbackLabel->setEditable (false, false, false);
+    feedbackLabel->setColour (juce::TextEditor::textColourId, juce::Colours::black);
+    feedbackLabel->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0x00000000));
 
-    decayLabel->setBounds (55, 5, 150, 24);
+    feedbackLabel->setBounds (55, 5, 150, 24);
 
 
     //[UserPreSize]
@@ -177,7 +177,7 @@ ReverbControls::~ReverbControls()
     dampeningLabel = nullptr;
     dryWetSlider = nullptr;
     dryWetLabel = nullptr;
-    decayLabel = nullptr;
+    feedbackLabel = nullptr;
 
 
     //[Destructor]. You can add your own custom destruction code here..
@@ -276,14 +276,14 @@ BEGIN_JUCER_METADATA
           needsCallback="1"/>
   <SLIDER name="LowShelfGainRotary" id="503c181d79b83708" memberName="lowshelfGainRotary"
           virtualName="" explicitFocusOrder="0" pos="242 32 167 120" thumbcol="ffffffff"
-          min="-10.0" max="10.0" int="0.1" style="RotaryVerticalDrag" textBoxPos="TextBoxBelow"
+          min="-20.0" max="0.0" int="0.1" style="RotaryVerticalDrag" textBoxPos="TextBoxBelow"
           textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="1.0"
           needsCallback="1"/>
   <SLIDER name="LowpassCutoffRotary" id="9d7408855718cdc4" memberName="lowpassCutoffRotary"
           virtualName="" explicitFocusOrder="0" pos="346 32 167 120" thumbcol="ffffffff"
           min="250.0" max="20000.0" int="1.0" style="RotaryVerticalDrag"
           textBoxPos="TextBoxBelow" textBoxEditable="1" textBoxWidth="80"
-          textBoxHeight="20" skewFactor="2.0" needsCallback="1"/>
+          textBoxHeight="20" skewFactor="0.5" needsCallback="1"/>
   <SLIDER name="PredelaySlider" id="1b9910f3e63b9312" memberName="predelaySlider"
           virtualName="" explicitFocusOrder="0" pos="301 194 150 24" posRelativeW="5c77376dcc19c0dc"
           thumbcol="ffffffff" min="0.0" max="1.0" int="0.1" style="LinearHorizontal"
@@ -319,9 +319,9 @@ BEGIN_JUCER_METADATA
          edBkgCol="0" labelText="Dry/Wet" editableSingleClick="0" editableDoubleClick="0"
          focusDiscardsChanges="0" fontname="Default font" fontsize="15.0"
          kerning="0.0" bold="0" italic="0" justification="36"/>
-  <LABEL name="DecayLabel" id="5c740aeb820a7d1f" memberName="decayLabel"
+  <LABEL name="FeebackLabel" id="5c740aeb820a7d1f" memberName="feedbackLabel"
          virtualName="" explicitFocusOrder="0" pos="55 5 150 24" edTextCol="ff000000"
-         edBkgCol="0" labelText="Decay" editableSingleClick="0" editableDoubleClick="0"
+         edBkgCol="0" labelText="Feedback" editableSingleClick="0" editableDoubleClick="0"
          focusDiscardsChanges="0" fontname="Default font" fontsize="18.0"
          kerning="0.0" bold="0" italic="0" justification="36"/>
 </JUCER_COMPONENT>
