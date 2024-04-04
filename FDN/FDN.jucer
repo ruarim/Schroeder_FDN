@@ -21,7 +21,9 @@
         <FILE id="U1vVWX" name="DelayLine.cpp" compile="1" resource="0" file="Source/DelayLine.cpp"/>
         <FILE id="HZr22B" name="DelayLine.h" compile="0" resource="0" file="Source/DelayLine.h"/>
       </GROUP>
-      <FILE id="nER01X" name="DelayFilters.h" compile="0" resource="0" file="Source/DelayFilters.h"/>
+      <FILE id="xV0NNg" name="MasterEffects.h" compile="0" resource="0" file="Source/MasterEffects.h"/>
+      <FILE id="nER01X" name="DampeningFilter.h" compile="0" resource="0"
+            file="Source/DampeningFilter.h"/>
       <FILE id="DpR8Hl" name="FeedbackMatrix.h" compile="0" resource="0"
             file="Source/FeedbackMatrix.h"/>
       <FILE id="iwYYkM" name="PluginProcessor.cpp" compile="1" resource="0"

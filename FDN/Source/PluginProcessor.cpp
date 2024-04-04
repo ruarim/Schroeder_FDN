@@ -126,7 +126,7 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     }
     
     predelay->prepare(sampleRate, maxDelaySeconds, stereo);
-    delayFilters.prepare(spec);
+    for(auto& df : dampeningFilters) df.prepare(sampleRate);
     mixer.prepare(spec);
     mixer.reset();
 }
@@ -172,12 +172,9 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
-
-    delayFilters.setLowpassCutoff(lowpassCutoff);
-    delayFilters.setLowshelfCoefficents(lowshelfCutoff, lowshelfQ, lowshelfGain);
     
-    mixer.setWetMixProportion(mix);
     juce::dsp::AudioBlock <float> block (buffer);
+    mixer.setWetMixProportion(mix);
     mixer.pushDrySamples(block);
     
     predelay->setReadPosition(predelayTime); // creates artifacts when moving?
@@ -210,7 +207,7 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         }
             
         /// apply feedback matrix
-        feedbackOut = fbMatrix.process(feedbackIn, feedbackDecay);
+        feedbackOut = fbMatrix.process(feedbackIn, 1.0f);
         
         /// stereo input samples
         std::array<float, stereo> stereoIn = { buffer.getReadPointer(0)[sample], buffer.getReadPointer(1)[sample] };
@@ -224,13 +221,14 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         predelay->advance();
         
         /// distribute  and scale the input to N number of delays
-        std::array<float, numDelays> splitInput = stereoDistribute(stereoIn[0], stereoIn[1]);
+        std::array<float, numDelays> splitInput = channelManager.stereoDistribute(stereoIn[0], stereoIn[1]); // take vector instead
         
         /// feedback in
         for(size_t i = 0; i < numDelays; ++i)
         {
-            /// lowpass filter  the feedback output
-            float delayedFiltered = delayFilters.processSample(feedbackOut[i]);
+            float M = delayTimes[i];
+            dampeningFilters[i].setCoefficients(t60, M);
+            float delayedFiltered = dampeningFilters[i].processSample(feedbackOut[i]);
                 
             feedbackDelays[i]->tapIn(delayedFiltered + splitInput[i], 0);
             

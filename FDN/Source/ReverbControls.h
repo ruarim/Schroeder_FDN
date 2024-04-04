@@ -59,16 +59,16 @@ private:
 
     //==============================================================================
     std::unique_ptr<juce::Slider> decaySlider;
-    std::unique_ptr<juce::Slider> lowshelfGainRotary;
+    std::unique_ptr<juce::Slider> highpassCutoffRotary;
     std::unique_ptr<juce::Slider> lowpassCutoffRotary;
     std::unique_ptr<juce::Slider> predelaySlider;
-    std::unique_ptr<juce::Label> lowshelfGainLabel;
+    std::unique_ptr<juce::Label> highpassCutoffLabel;
     std::unique_ptr<juce::Label> lowpassCutoffLabel;
     std::unique_ptr<juce::Label> predelayLabel;
-    std::unique_ptr<juce::Label> dampeningLabel;
+    std::unique_ptr<juce::Label> filtersLabel;
     std::unique_ptr<juce::Slider> dryWetSlider;
     std::unique_ptr<juce::Label> dryWetLabel;
-    std::unique_ptr<juce::Label> feedbackLabel;
+    std::unique_ptr<juce::Label> decayLabel;
 
 
     //==============================================================================
