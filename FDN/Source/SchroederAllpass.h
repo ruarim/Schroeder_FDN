@@ -37,7 +37,7 @@ public:
     {
         xDelay->setReadPosition(delaySeconds);
         yDelay->setReadPosition(delaySeconds);
-    }
+    }	
     
     float processSample(float sample)
     {

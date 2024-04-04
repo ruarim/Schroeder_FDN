@@ -48,23 +48,23 @@ ReverbControls::ReverbControls (FDNAudioProcessor& p)
 
     highpassCutoffRotary.reset (new juce::Slider ("HighpassCutoffRotary"));
     addAndMakeVisible (highpassCutoffRotary.get());
-    highpassCutoffRotary->setRange (500, 20, 0.1);
+    highpassCutoffRotary->setRange (20, 500, 0.1);
     highpassCutoffRotary->setSliderStyle (juce::Slider::RotaryVerticalDrag);
     highpassCutoffRotary->setTextBoxStyle (juce::Slider::TextBoxBelow, false, 80, 20);
     highpassCutoffRotary->setColour (juce::Slider::thumbColourId, juce::Colours::white);
     highpassCutoffRotary->addListener (this);
-    highpassCutoffRotary->setSkewFactor (0.9);
+    highpassCutoffRotary->setSkewFactor (0.8);
 
     highpassCutoffRotary->setBounds (242, 32, 167, 120);
 
     lowpassCutoffRotary.reset (new juce::Slider ("LowpassCutoffRotary"));
     addAndMakeVisible (lowpassCutoffRotary.get());
-    lowpassCutoffRotary->setRange (500, 20000, 1);
+    lowpassCutoffRotary->setRange (500, 20000, 0.1);
     lowpassCutoffRotary->setSliderStyle (juce::Slider::RotaryVerticalDrag);
     lowpassCutoffRotary->setTextBoxStyle (juce::Slider::TextBoxBelow, false, 80, 20);
     lowpassCutoffRotary->setColour (juce::Slider::thumbColourId, juce::Colours::white);
     lowpassCutoffRotary->addListener (this);
-    lowpassCutoffRotary->setSkewFactor (0.75);
+    lowpassCutoffRotary->setSkewFactor (0.4);
 
     lowpassCutoffRotary->setBounds (346, 32, 167, 120);
 
@@ -160,6 +160,9 @@ ReverbControls::ReverbControls (FDNAudioProcessor& p)
 
 
     //[Constructor] You can add your own custom stuff here..
+    decaySlider->setValue(1.0f);
+    dryWetSlider->setValue(1.0f);
+    lowpassCutoffRotary->setValue(20000.f);
     //[/Constructor]
 }
 
@@ -222,12 +225,13 @@ void ReverbControls::sliderValueChanged (juce::Slider* sliderThatWasMoved)
     else if (sliderThatWasMoved == highpassCutoffRotary.get())
     {
         //[UserSliderCode_highpassCutoffRotary] -- add your slider handling code here..
+        processor.highpassCutoff = sliderValue;
         //[/UserSliderCode_highpassCutoffRotary]
     }
     else if (sliderThatWasMoved == lowpassCutoffRotary.get())
     {
         //[UserSliderCode_lowpassCutoffRotary] -- add your slider handling code here..
-        //processor.lowpassCutoff = sliderValue;
+        processor.lowpassCutoff = sliderValue;
         //[/UserSliderCode_lowpassCutoffRotary]
     }
     else if (sliderThatWasMoved == predelaySlider.get())
@@ -276,14 +280,14 @@ BEGIN_JUCER_METADATA
           needsCallback="1"/>
   <SLIDER name="HighpassCutoffRotary" id="503c181d79b83708" memberName="highpassCutoffRotary"
           virtualName="" explicitFocusOrder="0" pos="242 32 167 120" thumbcol="ffffffff"
-          min="500.0" max="20.0" int="0.1" style="RotaryVerticalDrag" textBoxPos="TextBoxBelow"
-          textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="0.9"
+          min="20.0" max="500.0" int="0.1" style="RotaryVerticalDrag" textBoxPos="TextBoxBelow"
+          textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="0.8"
           needsCallback="1"/>
   <SLIDER name="LowpassCutoffRotary" id="9d7408855718cdc4" memberName="lowpassCutoffRotary"
           virtualName="" explicitFocusOrder="0" pos="346 32 167 120" thumbcol="ffffffff"
-          min="500.0" max="20000.0" int="1.0" style="RotaryVerticalDrag"
+          min="500.0" max="20000.0" int="0.1" style="RotaryVerticalDrag"
           textBoxPos="TextBoxBelow" textBoxEditable="1" textBoxWidth="80"
-          textBoxHeight="20" skewFactor="0.75" needsCallback="1"/>
+          textBoxHeight="20" skewFactor="0.4" needsCallback="1"/>
   <SLIDER name="PredelaySlider" id="1b9910f3e63b9312" memberName="predelaySlider"
           virtualName="" explicitFocusOrder="0" pos="301 194 150 24" posRelativeW="5c77376dcc19c0dc"
           thumbcol="ffffffff" min="0.0" max="1.0" int="0.01" style="LinearHorizontal"

@@ -11,13 +11,11 @@
         <FILE id="NsQWhK" name="ReverbControls.h" compile="0" resource="0"
               file="Source/ReverbControls.h"/>
       </GROUP>
-      <GROUP id="{160BC957-8E39-99EE-3952-76EA27371E41}" name="utils">
+      <GROUP id="{160BC957-8E39-99EE-3952-76EA27371E41}" name="Utils">
         <FILE id="eJgoC9" name="ChannelManager.h" compile="0" resource="0"
               file="Source/ChannelManager.h"/>
         <FILE id="PvomCr" name="SchroederAllpass.h" compile="0" resource="0"
               file="Source/SchroederAllpass.h"/>
-        <FILE id="ic9F9D" name="ParallelProcessor.h" compile="0" resource="0"
-              file="Source/ParallelProcessor.h"/>
         <FILE id="U1vVWX" name="DelayLine.cpp" compile="1" resource="0" file="Source/DelayLine.cpp"/>
         <FILE id="HZr22B" name="DelayLine.h" compile="0" resource="0" file="Source/DelayLine.h"/>
       </GROUP>

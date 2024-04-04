@@ -14,6 +14,7 @@
 #include "SchroederAllpass.h"
 #include "DampeningFilter.h"
 #include "ChannelManager.h"
+#include "MasterEffects.h"
 
 //==============================================================================
 /**
@@ -59,12 +60,11 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
     
     // PARAMETERS
-    float predelayTime      = 0.0f;
-    float t60               = 0.5f;
-    /// lowpass
-    int   lowpassCutoff     = 6000;
-    /// dry wet
-    float mix               = 1.0f;
+    float predelayTime   = 0.0f;
+    float t60            = 0.5f;
+    float lowpassCutoff  = 6000.0f;
+    float highpassCutoff = 200.0f;
+    float mix            = 1.0f;
 
 private:    
     /// reverb constants
@@ -83,14 +83,8 @@ private:
     FeedbackMatrix<numDelays> fbMatrix;
     juce::dsp::DryWetMixer<float> mixer;
     ChannelManager<numDelays, stereo> channelManager;
-    
-    /// collect signals for output
-    void stereoOutput(float signal, std::array<float, numOutChannels>& output, size_t i)
-    {
-        if(i < numDelays / 2) output[0] += signal;
-        else output[1] += signal;
-    }
-    
+    MasterEffects masterEffects;
+        
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FDNAudioProcessor)
 };

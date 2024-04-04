@@ -22,12 +22,8 @@ FDNAudioProcessor::FDNAudioProcessor()
                        )
 #endif
 {
-    // allocate feedback delays
-    for(size_t i = 0; i < numDelays; ++i)
-    {
-        feedbackDelays[i] = new DelayLine;
-    }
-    
+    // allocate delays - do they need allocation?
+    for(size_t i = 0; i < numDelays; ++i) feedbackDelays[i] = new DelayLine;
     predelay = new DelayLine;
 }
 
@@ -123,10 +119,14 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
         /// pre feedback matric allpass filters
         allpassCombs[i].prepare(sampleRate, maxDelaySeconds);
         allpassCombs[i].setDelay(allpassDelays[i]);
+        
+        dampeningFilters[i].prepare(sampleRate);
     }
     
     predelay->prepare(sampleRate, maxDelaySeconds, stereo);
-    for(auto& df : dampeningFilters) df.prepare(sampleRate);
+    
+    masterEffects.prepare(spec);
+    
     mixer.prepare(spec);
     mixer.reset();
 }
@@ -173,13 +173,17 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
+    masterEffects.setLowpassCutoff(lowpassCutoff);
+    masterEffects.setHighpassCutoff(highpassCutoff);
+    
+    /// Write dry signal to block
     juce::dsp::AudioBlock <float> block (buffer);
     mixer.setWetMixProportion(mix);
     mixer.pushDrySamples(block);
     
-    predelay->setReadPosition(predelayTime); // creates artifacts when moving?
+    predelay->setReadPosition(predelayTime);
         
-    /// output
+    /// run reverb
     for (size_t sample = 0; sample < numSamples; ++sample)
     {
         /// output values
@@ -200,12 +204,12 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
             feedbackIn[i] = delayed;
         }
         
-        /// apply Schroeder all-pass filters - MOVE parralel processor
+        /// apply Schroeder all-pass filters
         for(size_t i = 0; i < numDelays; ++i)
         {
             feedbackIn[i] = allpassCombs[i].processSample(feedbackIn[i]);
         }
-            
+        
         /// apply feedback matrix
         feedbackOut = fbMatrix.process(feedbackIn, 1.0f);
         
@@ -232,11 +236,11 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
                 
             feedbackDelays[i]->tapIn(delayedFiltered + splitInput[i], 0);
             
-            // move delays forward one sample
+            /// move delays forward one sample
             feedbackDelays[i]->advance();
         }
         
-        /// master filtering - split into 3 bands?
+        // output
         for(int channel = 0; channel < totalNumOutputChannels; ++channel)
         {
             float out = stereoOut[channel];
@@ -244,6 +248,10 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         }
     }
     
+    /// master effects
+    masterEffects.process(block);
+    
+    /// add wet to dry samples
     mixer.mixWetSamples(block);
 }
 
