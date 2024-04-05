@@ -23,7 +23,12 @@ FDNAudioProcessor::FDNAudioProcessor()
 #endif
 {
     // allocate delays - do they need allocation?
-    for(size_t i = 0; i < numDelays; ++i) feedbackDelays[i] = new DelayLine;
+    for(size_t i = 0; i < numDelays; ++i)
+    {
+        feedbackDelays[i] = new DelayLine;
+        
+    }
+    
     predelay = new DelayLine;
 }
 
@@ -124,9 +129,7 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     }
     
     predelay->prepare(sampleRate, maxDelaySeconds, stereo);
-    
     masterEffects.prepare(spec);
-    
     mixer.prepare(spec);
     mixer.reset();
 }
@@ -173,16 +176,18 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
+    /// set master filter cutoffs
     masterEffects.setLowpassCutoff(lowpassCutoff);
     masterEffects.setHighpassCutoff(highpassCutoff);
     
-    /// Write dry signal to block
+    /// write dry signal to block
     juce::dsp::AudioBlock <float> block (buffer);
     mixer.setWetMixProportion(mix);
     mixer.pushDrySamples(block);
     
+    /// set predelay
     predelay->setReadPosition(predelayTime);
-        
+    
     /// run reverb
     for (size_t sample = 0; sample < numSamples; ++sample)
     {
@@ -190,39 +195,32 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         std::array<float, numOutChannels> stereoOut = { 0.0f, 0.0f };
         std::array<float, numDelays>   feedbackIn;
         std::array<float, numDelays>   feedbackOut;
-                
-        /// feedback out
-        for(size_t i = 0; i < numDelays; ++i)
-        {
-            // get delayed signal
-            float delayed = feedbackDelays[i]->tapOut(0);
-            
-            /// sum  stereos out
-            if (i < numDelays / 2) stereoOut[0] += delayed;
-            else stereoOut[1] += delayed;
-            
-            feedbackIn[i] = delayed;
-        }
-        
-        /// apply Schroeder all-pass filters
-        for(size_t i = 0; i < numDelays; ++i)
-        {
-            feedbackIn[i] = allpassCombs[i].processSample(feedbackIn[i]);
-        }
-        
-        /// apply feedback matrix
-        feedbackOut = fbMatrix.process(feedbackIn, 1.0f);
         
         /// stereo input samples
         std::array<float, stereo> stereoIn = { buffer.getReadPointer(0)[sample], buffer.getReadPointer(1)[sample] };
         
         /// apply pre delay
-        for(int channel = 0; channel < stereo; ++channel)
-        {
-            predelay->tapIn(stereoIn[channel], channel);
-            stereoIn[channel] = predelay->tapOut(channel);
-        }
+        predelay->tapIn(stereoIn[0], 0);
+        predelay->tapIn(stereoIn[1], 1);
+        stereoIn[0] = predelay->tapOut(0);
+        stereoIn[1] = predelay->tapOut(1);
         predelay->advance();
+                
+        /// feedback out
+        for(size_t i = 0; i < numDelays; ++i)
+        {
+            /// get delayed signal
+            float delayed = feedbackDelays[i]->tapOut(0);
+            
+            /// sum  stereos out
+            channelManager.stereoOut(delayed, stereoOut, i);
+            
+            /// apply Schroeder all-pass filters
+            feedbackIn[i] = allpassCombs[i].processSample(delayed);
+        }
+
+        /// apply feedback matrix
+        feedbackOut = fbMatrix.process(feedbackIn, 1.0f);
         
         /// distribute  and scale the input to N number of delays
         std::array<float, numDelays> splitInput = channelManager.stereoDistribute(stereoIn[0], stereoIn[1]); // take vector instead
@@ -230,8 +228,7 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         /// feedback in
         for(size_t i = 0; i < numDelays; ++i)
         {
-            float M = delayTimes[i];
-            dampeningFilters[i].setCoefficients(t60, M);
+            dampeningFilters[i].setCoefficients(t60,  delayTimes[i]);
             float delayedFiltered = dampeningFilters[i].processSample(feedbackOut[i]);
                 
             feedbackDelays[i]->tapIn(delayedFiltered + splitInput[i], 0);
@@ -240,7 +237,7 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
             feedbackDelays[i]->advance();
         }
         
-        // output
+        /// output
         for(int channel = 0; channel < totalNumOutputChannels; ++channel)
         {
             float out = stereoOut[channel];

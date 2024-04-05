@@ -160,7 +160,7 @@ ReverbControls::ReverbControls (FDNAudioProcessor& p)
 
 
     //[Constructor] You can add your own custom stuff here..
-    decaySlider->setValue(1.0f);
+    decaySlider->setValue(2.0f);
     dryWetSlider->setValue(1.0f);
     lowpassCutoffRotary->setValue(20000.f);
     //[/Constructor]

@@ -38,9 +38,9 @@ public:
         return distributed;
     }
     
-    void stereoOutput(float signal, std::array<float, numOutChannels>& output, size_t i)
+    void stereoOut(float signal, std::array<float, numOutChannels>& output, size_t count)
     {
-        if(i < numDelays / 2) output[0] += signal;
+        if(count < numDelays / 2) output[0] += signal;
         else output[1] += signal;
     }
 };

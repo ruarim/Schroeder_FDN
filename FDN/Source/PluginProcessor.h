@@ -61,9 +61,9 @@ public:
     
     // PARAMETERS
     float predelayTime   = 0.0f;
-    float t60            = 0.5f;
-    float lowpassCutoff  = 6000.0f;
-    float highpassCutoff = 200.0f;
+    float t60            = 2.0f;
+    float lowpassCutoff  = 20000.0f;
+    float highpassCutoff = 20.0f;
     float mix            = 1.0f;
 
 private:    
@@ -71,18 +71,18 @@ private:
     static const size_t numDelays = 4;
     static const size_t numOutChannels = 2;
     const  float maxDelaySeconds = 2.0f;
-    static const int mono = 1;
+    static const int mono   = 1;
     static const int stereo = 2;
-    const std::array<float, numDelays> allpassDelays = { 0.020346f, 0.024421f, 0.031604f, 0.027333f }; /// - 0.022904f, 0.029291f, 0.013458f, 0.019123f (for higher channel out)
-    const std::array<float, numDelays> delayTimes    = { 0.153129f, 0.210389f, 0.127837f, 0.256891f }; /// -  0.174713f, 0.192303f, 0.125000f, 0.219991f (....same)
+    const std::array<float, numDelays> allpassDelays = { 0.020346f, 0.024421f, 0.031604f, 0.027333f }; /// - 0.022904f, 0.029291f, 0.013458f, 0.019123f   (for higher channel out)
+    const std::array<float, numDelays> delayTimes    = { 0.153129f, 0.210389f, 0.127837f, 0.256891f }; /// -  0.174713f, 0.192303f, 0.125000f, 0.219991f  (....same)
     
     DelayLine* predelay;
     std::array<DelayLine*,       numDelays> feedbackDelays;
     std::array<SchroederAllpass, numDelays> allpassCombs;
     std::array<DampeningFilter<numDelays>, numDelays> dampeningFilters;
     FeedbackMatrix<numDelays> fbMatrix;
-    juce::dsp::DryWetMixer<float> mixer;
     ChannelManager<numDelays, stereo> channelManager;
+    juce::dsp::DryWetMixer<float> mixer;
     MasterEffects masterEffects;
         
     //==============================================================================

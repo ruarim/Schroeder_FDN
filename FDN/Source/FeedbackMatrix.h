@@ -26,6 +26,7 @@ public:
         
         /// apply vector matrix multiplication
         std::array<float, numDelays> signalOut;
+        
         for(size_t i = 0; i < numDelays; ++i)
         {
             for(size_t j = 0; j < numDelays; ++j)
@@ -33,7 +34,6 @@ public:
                 signalOut[i] += (matrix[i][j] * signalIn[j]);
             }
         }
-        
         
         /// apply feedback gain
         for (int i = 0; i < numDelays; ++i) {
@@ -68,6 +68,19 @@ private:
             }
         }
     }
+    
+//    std::array<float, numDelays> vecMatMul(std::array<float, numDelays> input)
+//    {
+//        std::array<float, numDelays> output;
+//        for(size_t i = 0; i < numDelays; ++i)
+//        {
+//            for(size_t j = 0; j < numDelays; ++j)
+//            {
+//                output[i] += (matrix[i][j] * input[j]);
+//            }
+//        }
+//        return output;
+//    }
     
     bool isPowerOfTwo(int n) {
         return (ceil(log2(n)) == floor(log2(n)));
