@@ -34,7 +34,7 @@ public:
     float processSample(float sample)
     {
         /// get y/x - M
-        float xDelayed = xDelay.tapOut(0); // channel zero
+        float xDelayed = xDelay.tapOut(0);
         float yDelayed = yDelay.tapOut(0);
         
         /// difference equation:  y[n] = -g * x[n] + x[n - M] + g * y[n-M]

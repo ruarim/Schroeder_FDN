@@ -126,8 +126,8 @@ private:
         {
             /// split and invert sign
             distributed[i] = sample / numDelays;
-            if(i % 2 != 0) distributed[i] *= -1; /// sign inversion
-
+            if(i > numDelays / 2)  distributed[i] *= -1; // half sign inversion
+//            if(i % 2 != 0) distributed[i] *= -1; /// interleaved sign inversion
         }
             
         return distributed;

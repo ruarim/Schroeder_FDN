@@ -18,7 +18,10 @@ public:
     
     void prepare(juce::dsp::ProcessSpec spec)
     {
+        /// set up the processing chain
         chain.prepare(spec);
+        
+        /// make the filter types
         chain.get<highpass>().setType(FilterType::highpass);
         chain.get<lowpass>().setType(FilterType::lowpass);
     }
@@ -45,8 +48,11 @@ private:
         lowpass,
     };
     
+    /// create filter type aliases - TPT is used to alow modulation of the cutoff with out artifacts
     using Filter = juce::dsp::StateVariableTPTFilter<float>;
     using FilterType = juce::dsp::StateVariableTPTFilterType;
+    
+    /// define the processing chain
     juce::dsp::ProcessorChain<Filter, Filter> chain;
     
 };

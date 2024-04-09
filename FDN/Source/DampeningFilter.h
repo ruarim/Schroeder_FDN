@@ -36,6 +36,7 @@ public:
         return y * delayFilterGain; /// scale the filter output for stablity
     }
     
+    /// calculate coefficients based on t60
     void setCoefficients(float t60, float M)
     {
         float exp = (-3 * M) / t60;

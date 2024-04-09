@@ -95,17 +95,20 @@ void FDNAudioProcessor::changeProgramName (int index, const juce::String& newNam
 //==============================================================================
 void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // create processing spec
+    /// create processing spec
     juce::dsp::ProcessSpec spec;
     spec.maximumBlockSize = samplesPerBlock;
     spec.sampleRate = sampleRate;
     spec.numChannels = getTotalNumOutputChannels();
     
-    // setup reverb processor for each output channel
+    /// setup reverb processor for stereo output
     reverb[0].prepare(sampleRate, maxDelaySeconds, feedbackDelaysLeft,  allpassDelaysLeft);
     reverb[1].prepare(sampleRate, maxDelaySeconds, feedbackDelaysRight, allpassDelaysRight);
     
+    /// prepare low/high pass master effects
     masterEffects.prepare(spec);
+    
+    /// setup the dry/wet mixer
     mixer.prepare(spec);
     mixer.reset();
 }
@@ -156,7 +159,7 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     masterEffects.setLowpassCutoff(lowpassCutoff);
     masterEffects.setHighpassCutoff(highpassCutoff);
     
-    /// write dry signal to block
+    /// write dry signal to block so it can be mixed with the wet later
     juce::dsp::AudioBlock <float> block (buffer);
     mixer.setWetMixProportion(mix);
     mixer.pushDrySamples(block);
@@ -168,6 +171,7 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         {
             float in = buffer.getReadPointer(channel)[sample];
             
+            /// apply reverb sample by sample
             float out = reverb[channel].process(in, t60, predelayTime);
             buffer.getWritePointer(channel)[sample] = out;
         }

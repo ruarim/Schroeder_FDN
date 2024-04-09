@@ -55,7 +55,7 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
     
-    // PARAMETERS
+    /// PARAMETERS - these are expolsed on the GUI
     float predelayTime   = 0.0f;
     float t60            = 2.0f;
     float lowpassCutoff  = 20000.0f;
@@ -68,14 +68,21 @@ private:
     static const size_t numOutChannels = 2;
     const  float maxDelaySeconds = 2.0f;
     
-    const std::array<float, numDelays> allpassDelaysLeft  = { 0.020346f, 0.024421f, 0.031604f, 0.027333f };
-    const std::array<float, numDelays> allpassDelaysRight = { 0.022904f, 0.029291f, 0.013458f, 0.019123f  };
-    const std::array<float, numDelays> feedbackDelaysLeft     = { 0.153129f, 0.210389f, 0.127837f, 0.256891f };
-    const std::array<float, numDelays> feedbackDelaysRight    = { 0.174713f, 0.192303f, 0.125000f, 0.219991f };
+    /// allpass delay lengths for right and left channels
+    const std::array<float, numDelays> allpassDelaysLeft   = { 0.020346f, 0.024421f, 0.031604f, 0.027333f };
+    const std::array<float, numDelays> allpassDelaysRight  = { 0.022904f, 0.029291f, 0.013458f, 0.019123f };
     
+    /// feedback delay length for right and left channels
+    const std::array<float, numDelays> feedbackDelaysLeft  = { 0.153129f, 0.210389f, 0.127837f, 0.256891f };
+    const std::array<float, numDelays> feedbackDelaysRight = { 0.174713f, 0.192303f, 0.125000f, 0.219991f };
+    
+    /// reverb processor
     std::array<Reverb<numDelays>, numOutChannels> reverb;
     
+    /// dry/wet mixer
     juce::dsp::DryWetMixer<float> mixer;
+    
+    /// lowpass and highpass master effects
     MasterEffects masterEffects;
     
     //==============================================================================

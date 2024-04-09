@@ -19,14 +19,14 @@ public:
     FeedbackMatrix() = default;
     ~FeedbackMatrix() = default;
     
-    /// Performs the matrix multiplication
+    /// apply the feedback matrix to the vector via vector matrix multiplication
     std::array<float, numDelays> process(std::array<float, numDelays> signalIn, float feedbackGain)
     {
         assert(isPowerOfTwo(numDelays));
         
-        /// apply vector matrix multiplication
         std::array<float, numDelays> signalOut;
         
+        /// apply vector matrix multiplication
         for(size_t i = 0; i < numDelays; ++i)
         {
             for(size_t j = 0; j < numDelays; ++j)
@@ -43,6 +43,7 @@ public:
         return signalOut;
     }
     
+    /// create the feedback matrix
     void init(){
         generateHadamard(matrix, numDelays);
     }
@@ -50,6 +51,7 @@ public:
 private:
     std::array<std::array<float, numDelays>, numDelays> matrix;
     
+    /// generate a Hadamard matrix
     void generateHadamard(std::array<std::array<float, numDelays>, numDelays>& matrix, int N) {
         if (N == 1) {
             matrix[0][0] = 1;
@@ -59,29 +61,16 @@ private:
         int half = N / 2;
         generateHadamard(matrix, half);
         
-        /// Copy top-left quadrant to other quadrants
+        /// copy top-left quadrant to other quadrants
         for (int i = 0; i < half; ++i) {
             for (int j = 0; j < half; ++j) {
-                matrix[i + half][j] = matrix[i][j]; /// Bottom-left
-                matrix[i][j + half] = matrix[i][j]; /// Top-right
-                matrix[i + half][j + half] = -matrix[i][j]; /// Bottom-right
+                matrix[i + half][j] = matrix[i][j]; /// bottom-left
+                matrix[i][j + half] = matrix[i][j]; /// top-right
+                matrix[i + half][j + half] = -matrix[i][j]; /// bottom-right
             }
         }
     }
-    
-//    std::array<float, numDelays> vecMatMul(std::array<float, numDelays> input)
-//    {
-//        std::array<float, numDelays> output;
-//        for(size_t i = 0; i < numDelays; ++i)
-//        {
-//            for(size_t j = 0; j < numDelays; ++j)
-//            {
-//                output[i] += (matrix[i][j] * input[j]);
-//            }
-//        }
-//        return output;
-//    }
-    
+        
     bool isPowerOfTwo(int n) {
         return (ceil(log2(n)) == floor(log2(n)));
     }
