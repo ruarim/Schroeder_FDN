@@ -16,8 +16,8 @@ template<int numDelays>
 class FeedbackMatrix
 {
 public:
-    FeedbackMatrix(){};
-    ~FeedbackMatrix(){};
+    FeedbackMatrix() = default;
+    ~FeedbackMatrix() = default;
     
     /// Performs the matrix multiplication
     std::array<float, numDelays> process(std::array<float, numDelays> signalIn, float feedbackGain)

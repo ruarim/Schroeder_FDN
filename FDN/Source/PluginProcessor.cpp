@@ -22,24 +22,12 @@ FDNAudioProcessor::FDNAudioProcessor()
                        )
 #endif
 {
-    // allocate delays - do they need allocation?
-    for(size_t i = 0; i < numDelays; ++i)
-    {
-        feedbackDelays[i] = new DelayLine;
-        
-    }
-    
-    predelay = new DelayLine;
+
 }
 
 FDNAudioProcessor::~FDNAudioProcessor()
 {
-    for(size_t i = 0; i < numDelays; ++i)
-    {
-        delete feedbackDelays[i];
-    }
-    
-    delete predelay;
+
 }
 
 //==============================================================================
@@ -113,22 +101,10 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     spec.sampleRate = sampleRate;
     spec.numChannels = getTotalNumOutputChannels();
     
-    fbMatrix.init(); /// generate the feedback matrix
+    // setup reverb processor for each output channel
+    reverb[0].prepare(sampleRate, maxDelaySeconds, feedbackDelaysLeft,  allpassDelaysLeft);
+    reverb[1].prepare(sampleRate, maxDelaySeconds, feedbackDelaysRight, allpassDelaysRight);
     
-    for(size_t i = 0; i < numDelays; ++i)
-    {
-        /// set up delays
-        feedbackDelays[i]->prepare(sampleRate, maxDelaySeconds, mono);
-        feedbackDelays[i]->setReadPosition(delayTimes[i]);
-        
-        /// pre feedback matric allpass filters
-        allpassCombs[i].prepare(sampleRate, maxDelaySeconds);
-        allpassCombs[i].setDelay(allpassDelays[i]);
-        
-        dampeningFilters[i].prepare(sampleRate);
-    }
-    
-    predelay->prepare(sampleRate, maxDelaySeconds, stereo);
     masterEffects.prepare(spec);
     mixer.prepare(spec);
     mixer.reset();
@@ -184,63 +160,15 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     juce::dsp::AudioBlock <float> block (buffer);
     mixer.setWetMixProportion(mix);
     mixer.pushDrySamples(block);
-    
-    /// set predelay
-    predelay->setReadPosition(predelayTime);
-    
-    /// run reverb
-    for (size_t sample = 0; sample < numSamples; ++sample)
-    {
-        /// output values
-        std::array<float, numOutChannels> stereoOut = { 0.0f, 0.0f };
-        std::array<float, numDelays>   feedbackIn;
-        std::array<float, numDelays>   feedbackOut;
-        
-        /// stereo input samples
-        std::array<float, stereo> stereoIn = { buffer.getReadPointer(0)[sample], buffer.getReadPointer(1)[sample] };
-        
-        /// apply pre delay
-        predelay->tapIn(stereoIn[0], 0);
-        predelay->tapIn(stereoIn[1], 1);
-        stereoIn[0] = predelay->tapOut(0);
-        stereoIn[1] = predelay->tapOut(1);
-        predelay->advance();
-                
-        /// feedback out
-        for(size_t i = 0; i < numDelays; ++i)
-        {
-            /// get delayed signal
-            float delayed = feedbackDelays[i]->tapOut(0);
-            
-            /// sum  stereos out
-            channelManager.stereoOut(delayed, stereoOut, i);
-            
-            /// apply Schroeder all-pass filters
-            feedbackIn[i] = allpassCombs[i].processSample(delayed);
-        }
 
-        /// apply feedback matrix
-        feedbackOut = fbMatrix.process(feedbackIn, 1.0f);
-        
-        /// distribute  and scale the input to N number of delays
-        std::array<float, numDelays> splitInput = channelManager.stereoDistribute(stereoIn[0], stereoIn[1]); // take vector instead
-        
-        /// feedback in
-        for(size_t i = 0; i < numDelays; ++i)
+    /// process reverb
+    for(int channel = 0; channel < totalNumOutputChannels; ++channel)
+    {
+        for (size_t sample = 0; sample < numSamples; ++sample)
         {
-            dampeningFilters[i].setCoefficients(t60,  delayTimes[i]);
-            float delayedFiltered = dampeningFilters[i].processSample(feedbackOut[i]);
-                
-            feedbackDelays[i]->tapIn(delayedFiltered + splitInput[i], 0);
+            float in = buffer.getReadPointer(channel)[sample];
             
-            /// move delays forward one sample
-            feedbackDelays[i]->advance();
-        }
-        
-        /// output
-        for(int channel = 0; channel < totalNumOutputChannels; ++channel)
-        {
-            float out = stereoOut[channel];
+            float out = reverb[channel].process(in, t60, predelayTime);
             buffer.getWritePointer(channel)[sample] = out;
         }
     }

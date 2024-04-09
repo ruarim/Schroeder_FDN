@@ -9,12 +9,8 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "DelayLine.h"
-#include "FeedbackMatrix.h"
-#include "SchroederAllpass.h"
-#include "DampeningFilter.h"
-#include "ChannelManager.h"
 #include "MasterEffects.h"
+#include "Reverb.h"
 
 //==============================================================================
 /**
@@ -71,20 +67,17 @@ private:
     static const size_t numDelays = 4;
     static const size_t numOutChannels = 2;
     const  float maxDelaySeconds = 2.0f;
-    static const int mono   = 1;
-    static const int stereo = 2;
-    const std::array<float, numDelays> allpassDelays = { 0.020346f, 0.024421f, 0.031604f, 0.027333f }; /// - 0.022904f, 0.029291f, 0.013458f, 0.019123f   (for higher channel out)
-    const std::array<float, numDelays> delayTimes    = { 0.153129f, 0.210389f, 0.127837f, 0.256891f }; /// -  0.174713f, 0.192303f, 0.125000f, 0.219991f  (....same)
     
-    DelayLine* predelay;
-    std::array<DelayLine*,       numDelays> feedbackDelays;
-    std::array<SchroederAllpass, numDelays> allpassCombs;
-    std::array<DampeningFilter<numDelays>, numDelays> dampeningFilters;
-    FeedbackMatrix<numDelays> fbMatrix;
-    ChannelManager<numDelays, stereo> channelManager;
+    const std::array<float, numDelays> allpassDelaysLeft  = { 0.020346f, 0.024421f, 0.031604f, 0.027333f };
+    const std::array<float, numDelays> allpassDelaysRight = { 0.022904f, 0.029291f, 0.013458f, 0.019123f  };
+    const std::array<float, numDelays> feedbackDelaysLeft     = { 0.153129f, 0.210389f, 0.127837f, 0.256891f };
+    const std::array<float, numDelays> feedbackDelaysRight    = { 0.174713f, 0.192303f, 0.125000f, 0.219991f };
+    
+    std::array<Reverb<numDelays>, numOutChannels> reverb;
+    
     juce::dsp::DryWetMixer<float> mixer;
     MasterEffects masterEffects;
-        
+    
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FDNAudioProcessor)
 };

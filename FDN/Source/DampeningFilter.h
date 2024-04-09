@@ -48,7 +48,7 @@ private:
     
     float g = 0.f;
     float p = 0.0f;
-    float alpha = 0.7;
+    float alpha = 0.4;
     float prev = 0.0f;
     
     const float delayFilterGain =  (1 / std::sqrt(numDelays));

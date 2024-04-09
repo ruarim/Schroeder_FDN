@@ -11,9 +11,9 @@
 #include <JuceHeader.h>
 #include "DelayLine.h"
 
-DelayLine::DelayLine(){ };
+DelayLine::DelayLine() = default;
 
-DelayLine::~DelayLine(){ };
+DelayLine::~DelayLine() = default;
 
 // set up the buffer for the delay line
 void DelayLine::prepare(float sampleRate, float maxDelaySeconds, int numChannels){

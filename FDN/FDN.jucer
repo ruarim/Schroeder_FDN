@@ -12,11 +12,10 @@
               file="Source/ReverbControls.h"/>
       </GROUP>
       <GROUP id="{160BC957-8E39-99EE-3952-76EA27371E41}" name="Utils">
-        <FILE id="eJgoC9" name="ChannelManager.h" compile="0" resource="0"
-              file="Source/ChannelManager.h"/>
         <FILE id="U1vVWX" name="DelayLine.cpp" compile="1" resource="0" file="Source/DelayLine.cpp"/>
         <FILE id="HZr22B" name="DelayLine.h" compile="0" resource="0" file="Source/DelayLine.h"/>
       </GROUP>
+      <FILE id="coUr0q" name="Reverb.h" compile="0" resource="0" file="Source/Reverb.h"/>
       <FILE id="PvomCr" name="SchroederAllpass.h" compile="0" resource="0"
             file="Source/SchroederAllpass.h"/>
       <FILE id="xV0NNg" name="MasterEffects.h" compile="0" resource="0" file="Source/MasterEffects.h"/>

@@ -13,6 +13,9 @@
 class MasterEffects
 {
 public:
+    MasterEffects() = default;
+    ~MasterEffects() = default;
+    
     void prepare(juce::dsp::ProcessSpec spec)
     {
         chain.prepare(spec);
@@ -44,7 +47,6 @@ private:
     
     using Filter = juce::dsp::StateVariableTPTFilter<float>;
     using FilterType = juce::dsp::StateVariableTPTFilterType;
-//    using StereoFilter = juce::dsp::ProcessorDuplicator
     juce::dsp::ProcessorChain<Filter, Filter> chain;
     
 };
