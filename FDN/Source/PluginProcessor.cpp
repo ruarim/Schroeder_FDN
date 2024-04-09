@@ -22,24 +22,10 @@ FDNAudioProcessor::FDNAudioProcessor()
                        )
 #endif
 {
-    // allocate delays - do they need allocation?
-    for(size_t i = 0; i < numDelays; ++i)
-    {
-        feedbackDelays[i] = new DelayLine;
-        
-    }
-    
-    predelay = new DelayLine;
 }
 
 FDNAudioProcessor::~FDNAudioProcessor()
 {
-    for(size_t i = 0; i < numDelays; ++i)
-    {
-        delete feedbackDelays[i];
-    }
-    
-    delete predelay;
 }
 
 //==============================================================================
@@ -118,8 +104,8 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     for(size_t i = 0; i < numDelays; ++i)
     {
         /// set up delays
-        feedbackDelays[i]->prepare(sampleRate, maxDelaySeconds, mono);
-        feedbackDelays[i]->setReadPosition(delayTimes[i]);
+        feedbackDelays[i].prepare(sampleRate, maxDelaySeconds, mono);
+        feedbackDelays[i].setReadPosition(delayTimes[i]);
         
         /// pre feedback matric allpass filters
         allpassCombs[i].prepare(sampleRate, maxDelaySeconds);
@@ -128,7 +114,7 @@ void FDNAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
         dampeningFilters[i].prepare(sampleRate);
     }
     
-    predelay->prepare(sampleRate, maxDelaySeconds, stereo);
+    predelay.prepare(sampleRate, maxDelaySeconds, stereo);
     masterEffects.prepare(spec);
     mixer.prepare(spec);
     mixer.reset();
@@ -186,7 +172,7 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     mixer.pushDrySamples(block);
     
     /// set predelay
-    predelay->setReadPosition(predelayTime);
+    predelay.setReadPosition(predelayTime);
     
     /// run reverb
     for (size_t sample = 0; sample < numSamples; ++sample)
@@ -200,41 +186,44 @@ void FDNAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
         std::array<float, stereo> stereoIn = { buffer.getReadPointer(0)[sample], buffer.getReadPointer(1)[sample] };
         
         /// apply pre delay
-        predelay->tapIn(stereoIn[0], 0);
-        predelay->tapIn(stereoIn[1], 1);
-        stereoIn[0] = predelay->tapOut(0);
-        stereoIn[1] = predelay->tapOut(1);
-        predelay->advance();
+        predelay.tapIn(stereoIn[0], 0);
+        predelay.tapIn(stereoIn[1], 1);
+        stereoIn[0] = predelay.tapOut(0);
+        stereoIn[1] = predelay.tapOut(1);
+        predelay.advance();
+        
+        
+        
                 
         /// feedback out
         for(size_t i = 0; i < numDelays; ++i)
         {
             /// get delayed signal
-            float delayed = feedbackDelays[i]->tapOut(0);
-            
-            /// sum  stereos out
-            channelManager.stereoOut(delayed, stereoOut, i);
+            float delayed = feedbackDelays[i].tapOut(0);
             
             /// apply Schroeder all-pass filters
             feedbackIn[i] = allpassCombs[i].processSample(delayed);
+            
+            /// sum  stereos out
+            channelManager.stereoOut(delayed, stereoOut, i);
         }
 
         /// apply feedback matrix
-        feedbackOut = fbMatrix.process(feedbackIn, 1.0f);
+        feedbackOut = fbMatrix.process(feedbackIn, normGain);
         
         /// distribute  and scale the input to N number of delays
-        std::array<float, numDelays> splitInput = channelManager.stereoDistribute(stereoIn[0], stereoIn[1]); // take vector instead
+        std::array<float, numDelays> splitInput = channelManager.stereoDistribute(stereoIn[0], stereoIn[1], normGain); // take vector instead
         
         /// feedback in
         for(size_t i = 0; i < numDelays; ++i)
         {
             dampeningFilters[i].setCoefficients(t60,  delayTimes[i]);
-            float delayedFiltered = dampeningFilters[i].processSample(feedbackOut[i]);
+            float delayedFiltered = dampeningFilters[i].processSample(feedbackOut[i], normGain);
                 
-            feedbackDelays[i]->tapIn(delayedFiltered + splitInput[i], 0);
+            feedbackDelays[i].tapIn(delayedFiltered + splitInput[i], 0);
             
             /// move delays forward one sample
-            feedbackDelays[i]->advance();
+            feedbackDelays[i].advance();
         }
         
         /// output

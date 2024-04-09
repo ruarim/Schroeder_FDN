@@ -44,7 +44,5 @@ private:
     
     using Filter = juce::dsp::StateVariableTPTFilter<float>;
     using FilterType = juce::dsp::StateVariableTPTFilterType;
-//    using StereoFilter = juce::dsp::ProcessorDuplicator
     juce::dsp::ProcessorChain<Filter, Filter> chain;
-    
 };

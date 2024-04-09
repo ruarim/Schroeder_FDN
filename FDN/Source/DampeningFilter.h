@@ -26,14 +26,14 @@ public:
         //this->alpha = alpha; < 1
     }
         
-    float processSample(float sample)
+    float processSample(float sample, float normGain)
     {
         assert(sampleRate != 0.0f);
         /// difference equation y(n) = g * ((1 - a) x[n] + a * y[n-1]))
         float y = g * ((1 - p) * sample + p * prev);
         prev = y;
         
-        return y * delayFilterGain; /// scale the filter output for stablity
+        return y * normGain; /// scale the filter output for stablity
     }
     
     void setCoefficients(float t60, float M)
@@ -48,8 +48,7 @@ private:
     
     float g = 0.f;
     float p = 0.0f;
-    float alpha = 0.7;
+    float alpha = 0.4;
     float prev = 0.0f;
     
-    const float delayFilterGain =  (1 / std::sqrt(numDelays));
 };

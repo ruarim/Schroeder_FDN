@@ -24,6 +24,8 @@
             file="Source/DampeningFilter.h"/>
       <FILE id="DpR8Hl" name="FeedbackMatrix.h" compile="0" resource="0"
             file="Source/FeedbackMatrix.h"/>
+      <FILE id="LCt3oJ" name="Reverb.cpp" compile="1" resource="0" file="Source/Reverb.cpp"/>
+      <FILE id="lOENls" name="Reverb.h" compile="0" resource="0" file="Source/Reverb.h"/>
       <FILE id="iwYYkM" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="cbYccN" name="PluginProcessor.h" compile="0" resource="0"

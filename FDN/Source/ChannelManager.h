@@ -17,20 +17,20 @@ public:
     ChannelManager() = default;
     ~ChannelManager() = default;
     
-    std::array<float, numDelays> stereoDistribute(float left, float right)
+    std::array<float, numDelays> stereoDistribute(float left, float right, float normGain)
     {
         std::array<float, numDelays> distributed;
         for(size_t i = 0; i < numDelays; i++)
         {
-            // split left first half right second half
+            // split input betwenn number of delay lines
             if(i < numDelays / 2)
             {
-                distributed[i] = left / numDelays;
+                distributed[i] = left * normGain;
                 if(i % 2 != 0) distributed[i] *= -1; /// sign inversion
             }
             else
             {
-                distributed[i] = right / numDelays;
+                distributed[i] = right * normGain;
                 if(i % 2 != 0) distributed[i] *= -1; /// sign inversion
             }
         }

@@ -20,7 +20,7 @@ public:
     ~FeedbackMatrix(){};
     
     /// Performs the matrix multiplication
-    std::array<float, numDelays> process(std::array<float, numDelays> signalIn, float feedbackGain)
+    std::array<float, numDelays> process(std::array<float, numDelays> signalIn, float normGain)
     {
         assert(isPowerOfTwo(numDelays));
         
@@ -37,7 +37,7 @@ public:
         
         /// apply feedback gain
         for (int i = 0; i < numDelays; ++i) {
-            signalOut[i] *= feedbackGain;
+            signalOut[i] *= normGain;
         }
         
         return signalOut;
@@ -69,7 +69,7 @@ private:
         }
     }
     
-//    std::array<float, numDelays> vecMatMul(std::array<float, numDelays> input)
+//    std::array<float, numDelays> vecMatMul(std::array<float, numDelays> &input) // process in place via reference
 //    {
 //        std::array<float, numDelays> output;
 //        for(size_t i = 0; i < numDelays; ++i)
