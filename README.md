@@ -1,4 +1,4 @@
-# A feedback delay network with Schroeder all pass comb filters.
+# A Feedback Delay Network with Schroeder all pass comb filters.
 [Demo Video](https://youtu.be/OBex3b7Xd3I)
 
 # Final GUI
